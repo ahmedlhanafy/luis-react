@@ -1,42 +1,43 @@
 import React, { useState } from 'react';
-import { DefaultButton, Nav } from 'office-ui-fabric-react';
+import { ApolloProvider } from 'react-apollo-hooks';
+import ApolloClient from 'apollo-boost';
 import MyApps from './Pages/MyApps';
 import styled from 'styled-components';
 import { AppShell, MicrosoftHeader } from './Components';
 import Intents from './Pages/Intents';
 import Entities from './Pages/Entities';
-import {
-  BrowserRouter as Router,
-  Route,
-  Redirect,
-  Switch,
-} from 'react-router-dom';
+import { BrowserRouter as Router, Route, Redirect, Switch } from 'react-router-dom';
+
+const client = new ApolloClient({
+  uri: 'http://localhost:8080/graphql',
+  headers: {
+    'Ocp-Apim-Subscription-Key': 'c0f3cc704f2e4d348d52cfc7ccfee85b',
+  },
+});
 
 const App = () => (
-  <Router>
-    <AppContainer>
-      <MicrosoftHeader username="Ahmed Elhanafy" />
-      <Container>
-        <Route exact path="/" component={MyApps} />
-        <Route
-          path="/application"
-          render={({ match }) => (
-            <AppShell>
-              <Switch>
-                <Route
-                  exact
-                  path={`${match.url}/entities`}
-                  component={Entities}
-                />
-                <Route path={`${match.url}/intents`} component={Intents} />
-                <Redirect strict from={match.url} to={`${match.url}/intents`} />
-              </Switch>
-            </AppShell>
-          )}
-        />
-      </Container>
-    </AppContainer>
-  </Router>
+  <ApolloProvider client={client}>
+    <Router>
+      <AppContainer>
+        <MicrosoftHeader username="Ahmed Elhanafy" />
+        <Container>
+          <Route exact path="/" component={MyApps} />
+          <Route
+            path="/application"
+            render={({ match }) => (
+              <AppShell>
+                <Switch>
+                  <Route exact path={`${match.url}/entities`} component={Entities} />
+                  <Route path={`${match.url}/intents`} component={Intents} />
+                  <Redirect strict from={match.url} to={`${match.url}/intents`} />
+                </Switch>
+              </AppShell>
+            )}
+          />
+        </Container>
+      </AppContainer>
+    </Router>
+  </ApolloProvider>
 );
 
 const AppContainer = styled.div`
