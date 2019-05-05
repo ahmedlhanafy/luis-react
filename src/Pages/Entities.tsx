@@ -1,91 +1,34 @@
-import React, { useState, useEffect, useRef } from 'react';
-import styled from 'styled-components';
-import {
-  CommandBar,
-  ICommandBarItemProps,
-  SearchBox,
-} from 'office-ui-fabric-react';
+import React from 'react';
+import gql from 'graphql-tag';
+import { get } from 'lodash';
+import useReactRouter from 'use-react-router';
+import { CommandBar, SearchBox } from 'office-ui-fabric-react';
 import { Table } from '../Components';
 import { RowName } from '../Components/Table';
+import { useQuery } from 'react-apollo-hooks';
 
-const Entities = () => {
-  const getItems = () => {
-    return [
-      {
-        key: 'newItem',
-        name: 'Create new entity',
-        cacheKey: 'myCacheKey', // changing this key will invalidate this items cache
-        iconProps: {
-          iconName: 'Add',
-        },
-        ariaLabel: 'New. Use left and right arrow keys to navigate',
-      },
-      {
-        key: 'upload',
-        name: 'Add prebuilt entity',
-        iconProps: {
-          iconName: 'Add',
-        },
-        // href: 'https://dev.office.com/fabric',
-        ['data-automation-id']: 'uploadButton',
-      },
-      {
-        key: 'prebuilt_domain_entity',
-        name: 'Add prebuilt domain entity',
-        iconProps: {
-          iconName: 'Add',
-        },
-        // href: 'https://dev.office.com/fabric',
-        ['data-automation-id']: 'uploadButton',
-      },
-    ];
-  };
+const QUERY = gql`
+  query($applicationId: String!) {
+    application(id: $applicationId) {
+      entities {
+        id
+        key: id
+        name
+      }
+    }
+  }
+`;
 
-  const getFarItems = (): ICommandBarItemProps[] => {
-    return [
-      {
-        key: 'searchBox',
-        onRender: () => <SearchBox size={36} placeholder="Search entities" />,
-      },
-    ];
-  };
+const Entities = ({ applicationId }: { applicationId: string }) => {
+  const { data, loading } = useQuery(QUERY, { variables: { applicationId } });
 
   return (
     <section>
-      <h1 className="ms-font-xxl ms-fontSize-xxl ms-fontWeight-regular">
-        Entities
-      </h1>
-      <CommandBar
-        styles={{
-          secondarySet: {
-            alignItems: 'center',
-          },
-        }}
-        items={getItems()}
-        farItems={getFarItems()}
-        ariaLabel={'Use left and right arrow keys to navigate between commands'}
-      />
+      <h1 className="ms-font-xxl ms-fontSize-xxl ms-fontWeight-regular">Entities</h1>
+      <TopBar />
       <Table
-        items={[
-          {
-            key: '1',
-            name: 'Calendar.Location',
-            type: 'Domain',
-            labeled_utterances: 10,
-          },
-          {
-            key: '2',
-            name: 'Calendar.Subject',
-            type: 'Simple',
-            labeled_utterances: 5,
-          },
-          {
-            key: '3',
-            name: 'Location',
-            type: 'Simple',
-            labeled_utterances: 110,
-          },
-        ]}
+        isLoading={loading}
+        items={get(data, 'application.entities', [])}
         columns={[
           {
             key: 'column1',
@@ -126,5 +69,51 @@ const Entities = () => {
     </section>
   );
 };
+
+const TopBar = () => (
+  <CommandBar
+    styles={{
+      secondarySet: {
+        alignItems: 'center',
+      },
+    }}
+    items={[
+      {
+        key: 'newItem',
+        name: 'Create new entity',
+        cacheKey: 'myCacheKey', // changing this key will invalidate this items cache
+        iconProps: {
+          iconName: 'Add',
+        },
+        ariaLabel: 'New. Use left and right arrow keys to navigate',
+      },
+      {
+        key: 'upload',
+        name: 'Add prebuilt entity',
+        iconProps: {
+          iconName: 'Add',
+        },
+        // href: 'https://dev.office.com/fabric',
+        ['data-automation-id']: 'uploadButton',
+      },
+      {
+        key: 'prebuilt_domain_entity',
+        name: 'Add prebuilt domain entity',
+        iconProps: {
+          iconName: 'Add',
+        },
+        // href: 'https://dev.office.com/fabric',
+        ['data-automation-id']: 'uploadButton',
+      },
+    ]}
+    farItems={[
+      {
+        key: 'searchBox',
+        onRender: () => <SearchBox size={36} placeholder="Search entities" />,
+      },
+    ]}
+    ariaLabel={'Use left and right arrow keys to navigate between commands'}
+  />
+);
 
 export default Entities;

@@ -1,80 +1,34 @@
-import React, { useState, useEffect, useRef } from 'react';
-import styled from 'styled-components';
-import {
-  CommandBar,
-  ICommandBarItemProps,
-  SearchBox,
-} from 'office-ui-fabric-react';
+import React from 'react';
+import useReactRouter from 'use-react-router';
+import { get } from 'lodash';
+import gql from 'graphql-tag';
+import { CommandBar, ICommandBarItemProps, SearchBox } from 'office-ui-fabric-react';
 import { Table } from '../Components';
 import { RowName } from '../Components/Table';
+import { useQuery } from 'react-apollo-hooks';
 
-const Intents = () => {
-  const getItems = () => [
-    {
-      key: 'newItem',
-      name: 'Create new intent',
-      cacheKey: 'myCacheKey', // changing this key will invalidate this items cache
-      iconProps: {
-        iconName: 'Add',
-      },
-      ariaLabel: 'New. Use left and right arrow keys to navigate',
-    },
-    {
-      key: 'upload',
-      name: 'Add prebuilt domain intent',
-      iconProps: {
-        iconName: 'Add',
-      },
-      // href: 'https://dev.office.com/fabric',
-      ['data-automation-id']: 'uploadButton',
-    },
-  ];
+const QUERY = gql`
+  query($applicationId: String!) {
+    application(id: $applicationId) {
+      intents {
+        id
+        key: id
+        name
+      }
+    }
+  }
+`;
 
-  const getFarItems = (): ICommandBarItemProps[] => [
-    {
-      key: 'searchBox',
-      onRender: () => <SearchBox size={36} placeholder="Search intents" />,
-    },
-  ];
+const Intents = ({ applicationId }: { applicationId: string }) => {
+  const { data, loading } = useQuery(QUERY, { variables: { applicationId } });
 
   return (
     <section>
-      <h1 className="ms-font-xxl ms-fontSize-xxl ms-fontWeight-regular">
-        Intents
-      </h1>
-      <CommandBar
-        styles={{
-          secondarySet: {
-            alignItems: 'center',
-          },
-        }}
-        items={getItems()}
-        farItems={getFarItems()}
-        ariaLabel={'Use left and right arrow keys to navigate between commands'}
-      />
+      <h1 className="ms-font-xxl ms-fontSize-xxl ms-fontWeight-regular">Intents</h1>
+      <TopBar />
       <Table
-        items={[
-          {
-            key: '1',
-            name: 'Calendar.Add',
-            labeled_utterances: 10,
-          },
-          {
-            key: '2',
-            name: 'Calendar.Remove',
-            labeled_utterances: 20,
-          },
-          {
-            key: '3',
-            name: 'Reminder.Add',
-            labeled_utterances: 40,
-          },
-          {
-            key: '4',
-            name: 'Reminder.Remove',
-            labeled_utterances: 50,
-          },
-        ]}
+        isLoading={loading}
+        items={get(data, 'application.intents', [])}
         columns={[
           {
             key: 'column1',
@@ -106,5 +60,43 @@ const Intents = () => {
     </section>
   );
 };
+
+const TopBar = () => (
+  <CommandBar
+    styles={{
+      secondarySet: {
+        alignItems: 'center',
+      },
+      root: { marginBottom: 12 },
+    }}
+    items={[
+      {
+        key: 'newItem',
+        name: 'Create new intent',
+        cacheKey: 'myCacheKey', // changing this key will invalidate this items cache
+        iconProps: {
+          iconName: 'Add',
+        },
+        ariaLabel: 'New. Use left and right arrow keys to navigate',
+      },
+      {
+        key: 'upload',
+        name: 'Add prebuilt domain intent',
+        iconProps: {
+          iconName: 'Add',
+        },
+        // href: 'https://dev.office.com/fabric',
+        ['data-automation-id']: 'uploadButton',
+      },
+    ]}
+    farItems={[
+      {
+        key: 'searchBox',
+        onRender: () => <SearchBox size={36} placeholder="Search intents" />,
+      },
+    ]}
+    ariaLabel={'Use left and right arrow keys to navigate between commands'}
+  />
+);
 
 export default Intents;

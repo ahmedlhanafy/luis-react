@@ -23,12 +23,12 @@ const App = () => (
         <Container>
           <Route exact path="/" component={MyApps} />
           <Route
-            path="/application"
+            path="/application/:applicationId/version/:versionId"
             render={({ match }) => (
               <AppShell>
                 <Switch>
-                  <Route exact path={`${match.url}/entities`} component={Entities} />
-                  <Route path={`${match.url}/intents`} component={Intents} />
+                  <Route exact path={`${match.url}/entities`} render={() => <Entities applicationId={match.params.applicationId} />} />
+                  <Route path={`${match.url}/intents`} render={() => <Intents applicationId={match.params.applicationId} />} />
                   <Redirect strict from={match.url} to={`${match.url}/intents`} />
                 </Switch>
               </AppShell>
