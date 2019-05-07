@@ -1,4 +1,5 @@
 import { gql } from 'apollo-boost';
+
 export default gql`
   query GetApps {
     applications(take: 10) {

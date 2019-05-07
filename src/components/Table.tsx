@@ -6,7 +6,8 @@ import {
   DetailsListLayoutMode,
   Selection,
   SelectionMode,
-  ShimmeredDetailsList
+  ShimmeredDetailsList,
+  ISelection,
 } from 'office-ui-fabric-react';
 import styled from 'styled-components';
 import { Link } from 'react-router-dom';
@@ -14,18 +15,13 @@ import { Link } from 'react-router-dom';
 type Props = {
   columns: IColumn[];
   items: any[];
-  isLoading?: boolean
+  isLoading?: boolean;
+  selection: ISelection;
 };
 
 const Table = (props: Props) => {
-  const selection = useRef(
-    new Selection({
-      onSelectionChanged: () => {},
-    }),
-  );
-
   return (
-    <MarqueeSelection selection={selection.current}>
+    <MarqueeSelection selection={props.selection}>
       <ShimmeredDetailsList
         styles={{}}
         // componentRef={this._detailsList}
@@ -33,7 +29,7 @@ const Table = (props: Props) => {
         columns={props.columns}
         setKey="set"
         layoutMode={DetailsListLayoutMode.justified}
-        selection={selection.current}
+        selection={props.selection}
         ariaLabelForSelectionColumn="Toggle selection"
         ariaLabelForSelectAllCheckbox="Toggle selection for all items"
         enableShimmer={props.isLoading}

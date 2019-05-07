@@ -1,32 +1,39 @@
-import React from 'react';
-import gql from 'graphql-tag';
+import React, { useRef, useEffect } from 'react';
 import { get } from 'lodash';
-import useReactRouter from 'use-react-router';
-import { CommandBar, SearchBox } from 'office-ui-fabric-react';
-import { Table } from '../Components';
-import { RowName } from '../Components/Table';
-import { useQuery } from 'react-apollo-hooks';
-
-const QUERY = gql`
-  query($applicationId: String!) {
-    application(id: $applicationId) {
-      entities {
-        id
-        key: id
-        name
-      }
-    }
-  }
-`;
+import { CommandBar, SearchBox, Selection, ISelection } from 'office-ui-fabric-react';
+import { useQuery, useMutation } from 'react-apollo-hooks';
+import Table, { RowName } from '../components/Table';
+import GetEntitiesQuery from '../graphql/queries/GetEntities';
+import { GetEntities, GetEntities_application_entities } from '../graphql/queries/__generated__/GetEntities';
+import RenameEntityMutation from '../graphql/mutations/RenameEntity';
+import { RenameEntity, RenameEntityVariables } from '../graphql/mutations/__generated__/RenameEntity';
 
 const Entities = ({ applicationId }: { applicationId: string }) => {
-  const { data, loading } = useQuery(QUERY, { variables: { applicationId } });
+  const { data, loading } = useQuery<GetEntities>(GetEntitiesQuery, { variables: { applicationId } });
+
+  const selection: { current: ISelection } = useRef<ISelection>(
+    new Selection({
+      onSelectionChanged: (...args: any[]) => console.log(selection.current.getSelection()),
+    }),
+  );
+  const name = 'Refrential entegrity';
+  const renameEntity = useMutation<RenameEntity, RenameEntityVariables>(RenameEntityMutation, {
+    variables: { applicationId, versionId: '0.1', id: '8d712b4b-c3c7-466a-9426-a21154757987', name },
+    optimisticResponse: {
+      renameEntity: {
+        id: '8d712b4b-c3c7-466a-9426-a21154757987',
+        name,
+        __typename: 'SimpleEntity',
+      },
+    },
+  });
 
   return (
     <section>
       <h1 className="ms-font-xxl ms-fontSize-xxl ms-fontWeight-regular">Entities</h1>
-      <TopBar />
+      <TopBar renameEntity={renameEntity} />
       <Table
+        selection={selection.current}
         isLoading={loading}
         items={get(data, 'application.entities', [])}
         columns={[
@@ -42,7 +49,7 @@ const Entities = ({ applicationId }: { applicationId: string }) => {
             isSortedDescending: false,
             sortAscendingAriaLabel: 'Sorted A to Z',
             sortDescendingAriaLabel: 'Sorted Z to A',
-            onRender: (item: any) => {
+            onRender: (item: GetEntities_application_entities) => {
               return <RowName to="#">{item.name}</RowName>;
             },
           },
@@ -70,7 +77,7 @@ const Entities = ({ applicationId }: { applicationId: string }) => {
   );
 };
 
-const TopBar = () => (
+const TopBar = ({ renameEntity }: any) => (
   <CommandBar
     styles={{
       secondarySet: {
@@ -104,6 +111,16 @@ const TopBar = () => (
         },
         // href: 'https://dev.office.com/fabric',
         ['data-automation-id']: 'uploadButton',
+      },
+      {
+        key: 'rename_entity',
+        name: 'Rename Entity',
+        iconProps: {
+          iconName: 'Edit',
+        },
+        // href: 'https://dev.office.com/fabric',
+        ['data-automation-id']: 'uploadButton',
+        onClick: renameEntity,
       },
     ]}
     farItems={[

@@ -1,48 +1,32 @@
-import React from 'react';
+import React, { useRef } from 'react';
 import styled from 'styled-components';
 import {
   CommandBar,
-  ICommandBarItemProps,
   SearchBox,
   Dialog,
   DialogType,
   PrimaryButton,
-  DialogContent,
   DefaultButton,
   DialogFooter,
-  Label,
   TextField,
+  Selection,
 } from 'office-ui-fabric-react';
 import gql from 'graphql-tag';
-import { Table } from '../Components';
-import { RowName } from '../Components/Table';
+import Table, { RowName } from '../components/Table';
 import { useQuery, useMutation } from 'react-apollo-hooks';
-
-const getFarItems = (): ICommandBarItemProps[] => {
-  return [
-    {
-      key: 'searchBox',
-      onRender: () => <SearchBox size={36} placeholder="Search" />,
-    },
-  ];
-};
-
-const APPS_QUERY = gql`
-  {
-    applications(take: 10) {
-      id
-      key: id
-      name
-      culture
-      endpointHitsCount
-      activeVersion
-    }
-  }
-`;
+import GetAppsQuery from '../graphql/queries/GetApps';
+import { GetApps, GetApps_applications } from '../graphql/queries/__generated__/GetApps';
+import CreateNewAppMutation from '../graphql/mutations/CreateNewApp';
+import { CreateNewApp, CreateNewAppVariables } from '../graphql/mutations/__generated__/CreateNewApp';
 
 const MyApps = () => {
   const [dialogOpen, setDialogOpen] = React.useState(false);
-  const { data, loading } = useQuery(APPS_QUERY);
+  const { data, loading } = useQuery<GetApps>(GetAppsQuery);
+  const selection = useRef(
+    new Selection({
+      onSelectionChanged: console.log,
+    }),
+  );
   return (
     <Container>
       <h1 className="ms-font-xxl ms-fontSize-xxl ms-fontWeight-regular">My Apps</h1>
@@ -74,10 +58,16 @@ const MyApps = () => {
             ['data-automation-id']: 'uploadButton',
           },
         ]}
-        farItems={getFarItems()}
+        farItems={[
+          {
+            key: 'searchBox',
+            onRender: () => <SearchBox size={36} placeholder="Search" />,
+          },
+        ]}
         ariaLabel={'Use left and right arrow keys to navigate between commands'}
       />
       <Table
+        selection={selection.current}
         items={data.applications}
         isLoading={loading}
         columns={[
@@ -93,7 +83,7 @@ const MyApps = () => {
             isSortedDescending: false,
             sortAscendingAriaLabel: 'Sorted A to Z',
             sortDescendingAriaLabel: 'Sorted Z to A',
-            onRender: (item: any) => {
+            onRender: (item: GetApps_applications) => {
               return (
                 <RowName to={`/application/${item.id}/version/${item.activeVersion}`} onClick={e => e.stopPropagation()}>
                   {item.name} <small>({item.activeVersion})</small>
@@ -135,36 +125,16 @@ const MyApps = () => {
   );
 };
 
-const NewAppMutation = gql`
-  mutation($name: String!, $description: String) {
-    createApplication(name: $name, description: $description, culture: enus) {
-      id
-      name
-      culture
-      activeVersion
-      endpointHitsCount
-      intents {
-        id
-        key: id
-        name
-      }
-    }
-  }
-`;
-
 const NewAppDialog = ({ open, requestClose }: { open: boolean; requestClose: () => void }) => {
   const [name, setName] = React.useState('');
   const [description, setDescription] = React.useState('');
 
-  const creatNewApp = useMutation(NewAppMutation, {
+  const creatNewApp = useMutation(CreateNewAppMutation, {
     variables: { name, description },
     update: (store, { data: { createApplication } }) => {
-      // Read the data from our cache for this query.
-      const data = store.readQuery({ query: APPS_QUERY });
-      // Add our comment from the mutation to the end.
+      const data = store.readQuery({ query: GetAppsQuery });
       (data as any).applications.push(createApplication);
-      // Write our data back to the cache.
-      store.writeQuery({ query: APPS_QUERY, data });
+      store.writeQuery({ query: GetAppsQuery, data });
     },
   });
   return (

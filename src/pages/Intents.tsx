@@ -1,32 +1,24 @@
-import React from 'react';
-import useReactRouter from 'use-react-router';
+import React, { useRef } from 'react';
 import { get } from 'lodash';
-import gql from 'graphql-tag';
-import { CommandBar, ICommandBarItemProps, SearchBox } from 'office-ui-fabric-react';
-import { Table } from '../Components';
-import { RowName } from '../Components/Table';
+import { CommandBar, SearchBox, Selection } from 'office-ui-fabric-react';
+import Table, { RowName } from '../components/Table';
 import { useQuery } from 'react-apollo-hooks';
-
-const QUERY = gql`
-  query($applicationId: String!) {
-    application(id: $applicationId) {
-      intents {
-        id
-        key: id
-        name
-      }
-    }
-  }
-`;
+import GetIntentsQuery from '../graphql/queries/GetIntents';
+import { GetIntents, GetIntents_application_intents } from '../graphql/queries/__generated__/GetIntents';
 
 const Intents = ({ applicationId }: { applicationId: string }) => {
-  const { data, loading } = useQuery(QUERY, { variables: { applicationId } });
-
+  const { data, loading } = useQuery<GetIntents>(GetIntentsQuery, { variables: { applicationId } });
+  const selection = useRef(
+    new Selection({
+      onSelectionChanged: console.log,
+    }),
+  );
   return (
     <section>
       <h1 className="ms-font-xxl ms-fontSize-xxl ms-fontWeight-regular">Intents</h1>
       <TopBar />
       <Table
+        selection={selection.current}
         isLoading={loading}
         items={get(data, 'application.intents', [])}
         columns={[
@@ -42,9 +34,7 @@ const Intents = ({ applicationId }: { applicationId: string }) => {
             isSortedDescending: false,
             sortAscendingAriaLabel: 'Sorted A to Z',
             sortDescendingAriaLabel: 'Sorted Z to A',
-            onRender: (item: any) => {
-              return <RowName to="#">{item.name}</RowName>;
-            },
+            onRender: (item: GetIntents_application_intents) => <RowName to="#">{item.name}</RowName>,
           },
           {
             key: 'column2',

@@ -5,15 +5,16 @@ import Nav from './Nav';
 
 type Props = {
   children?: React.ReactNode;
+  applicationId: string;
 };
 
-const AppShell = (props: Props) => {
+const AppShell = ({ applicationId, children }: Props) => {
   return (
     <>
-      <Header username="" />
+      <Header applicationId={applicationId} />
       <Container>
         <Nav />
-        <Content>{props.children}</Content>
+        <Content>{children}</Content>
       </Container>
     </>
   );

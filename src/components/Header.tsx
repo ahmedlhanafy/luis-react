@@ -1,17 +1,31 @@
 import React, { useState } from 'react';
 import styled from 'styled-components';
 import { DefaultButton } from 'office-ui-fabric-react';
+import gql from 'graphql-tag';
+import { useQuery } from 'react-apollo-hooks';
+import { get } from 'lodash';
 
 type Props = {
-  username: string;
+  applicationId: string;
 };
+
+const QUERY = gql`
+  query HeaderQuery($applicationId: String!) {
+    application(id: $applicationId) {
+      id
+      name
+      activeVersion
+    }
+  }
+`;
 
 const Header = (props: Props) => {
   const [selected, setSelected] = useState(1);
+  const { data } = useQuery(QUERY, { variables: { applicationId: props.applicationId }, fetchPolicy: 'cache-only' });
   return (
     <Container>
       <AppName>
-        LUIS App <small>&nbsp;(0.1)</small>
+        {get(data, 'application.name', '')} <small>&nbsp;({get(data, 'application.activeVersion', '')})</small>
       </AppName>
       <Spacer />
       <Item active={selected === 0} onClick={() => setSelected(0)}>
@@ -63,8 +77,7 @@ const Item = styled.a`
   text-transform: uppercase;
   position: relative;
   cursor: pointer;
-  background-color: ${(props: ItemProps) =>
-    props.active && 'rgba(118,118,118,.3)'};
+  background-color: ${(props: ItemProps) => props.active && 'rgba(118,118,118,.3)'};
   &:hover {
     background-color: rgba(118, 118, 118, 0.3);
   }
