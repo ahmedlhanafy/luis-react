@@ -1,4 +1,4 @@
-import { gql } from 'apollo-boost';
+import gql from 'graphql-tag';
 
 export default gql`
   query GetApps {
@@ -8,7 +8,7 @@ export default gql`
       name
       culture
       endpointHitsCount
-      activeVersion
+      version: activeVersion
     }
   }
 `;

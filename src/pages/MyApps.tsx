@@ -1,75 +1,39 @@
-import React, { useRef } from 'react';
+import React from 'react';
 import styled from 'styled-components';
-import {
-  CommandBar,
-  SearchBox,
-  Dialog,
-  DialogType,
-  PrimaryButton,
-  DefaultButton,
-  DialogFooter,
-  TextField,
-  Selection,
-} from 'office-ui-fabric-react';
-import gql from 'graphql-tag';
+import { get } from 'lodash';
+import { CommandBar, SearchBox, Checkbox } from 'office-ui-fabric-react';
 import Table, { RowName } from '../components/Table';
 import { useQuery, useMutation } from 'react-apollo-hooks';
 import GetAppsQuery from '../graphql/queries/GetApps';
 import { GetApps, GetApps_applications } from '../graphql/queries/__generated__/GetApps';
-import CreateNewAppMutation from '../graphql/mutations/CreateNewApp';
-import { CreateNewApp, CreateNewAppVariables } from '../graphql/mutations/__generated__/CreateNewApp';
+import DeleteAppsMutation from '../graphql/mutations/DeleteApps';
+import { DeleteApps, DeleteAppsVariables } from '../graphql/mutations/__generated__/DeleteApps';
+import useSelection from '../hooks/useSelection';
+import NewAppDialog from '../components/NewAppDialog';
 
-const MyApps = () => {
-  const [dialogOpen, setDialogOpen] = React.useState(false);
-  const { data, loading } = useQuery<GetApps>(GetAppsQuery);
-  const selection = useRef(
-    new Selection({
-      onSelectionChanged: console.log,
-    }),
-  );
+type Props = { mockSchemaEnabled: boolean; toggleMockSchema: () => void };
+
+const MyApps = ({ mockSchemaEnabled, toggleMockSchema }: Props) => {
+  const { data } = useQuery<GetApps>(GetAppsQuery, { fetchPolicy: 'cache-and-network' });
+  const { items, selection } = useSelection();
+
   return (
     <Container>
-      <h1 className="ms-font-xxl ms-fontSize-xxl ms-fontWeight-regular">My Apps</h1>
-      <CommandBar
-        styles={{
-          secondarySet: {
-            alignItems: 'center',
-          },
-          root: { marginBottom: 12 },
-        }}
-        items={[
-          {
-            key: 'newItem',
-            name: 'Create new app',
-            cacheKey: 'myCacheKey', // changing this key will invalidate this items cache
-            iconProps: {
-              iconName: 'Add',
-            },
-            ariaLabel: 'New. Use left and right arrow keys to navigate',
-            onClick: () => setDialogOpen(true),
-          },
-          {
-            key: 'upload',
-            name: 'Import new app',
-            iconProps: {
-              iconName: 'Upload',
-            },
-            // href: 'https://dev.office.com/fabric',
-            ['data-automation-id']: 'uploadButton',
-          },
-        ]}
-        farItems={[
-          {
-            key: 'searchBox',
-            onRender: () => <SearchBox size={36} placeholder="Search" />,
-          },
-        ]}
-        ariaLabel={'Use left and right arrow keys to navigate between commands'}
-      />
+      <h1 className="ms-font-xxl ms-fontSize-xxl ms-fontWeight-regular">
+        <span>
+          My Apps
+          <Checkbox
+            label={`${mockSchemaEnabled ? 'Disable' : 'Enable'} mock data`}
+            checked={mockSchemaEnabled}
+            onChange={() => toggleMockSchema()}
+          />
+        </span>
+      </h1>
+      <TopBar items={items} />
       <Table
-        selection={selection.current}
-        items={data.applications}
-        isLoading={loading}
+        selection={selection}
+        items={get(data, 'applications', [])}
+        isLoading={!data}
         columns={[
           {
             key: 'column1',
@@ -85,8 +49,8 @@ const MyApps = () => {
             sortDescendingAriaLabel: 'Sorted Z to A',
             onRender: (item: GetApps_applications) => {
               return (
-                <RowName to={`/application/${item.id}/version/${item.activeVersion}`} onClick={e => e.stopPropagation()}>
-                  {item.name} <small>({item.activeVersion})</small>
+                <RowName to={`/application/${item.id}/version/${item.version}`} onClick={e => e.stopPropagation()}>
+                  {item.name} <small>({item.version})</small>
                 </RowName>
               );
             },
@@ -120,61 +84,69 @@ const MyApps = () => {
           },
         ]}
       />
-      <NewAppDialog open={dialogOpen} requestClose={() => setDialogOpen(false)} />
     </Container>
   );
 };
 
-const NewAppDialog = ({ open, requestClose }: { open: boolean; requestClose: () => void }) => {
-  const [name, setName] = React.useState('');
-  const [description, setDescription] = React.useState('');
+const TopBar = ({ items }: { items: any[] }) => {
+  const [dialogOpen, setDialogOpen] = React.useState(false);
 
-  const creatNewApp = useMutation(CreateNewAppMutation, {
-    variables: { name, description },
-    update: (store, { data: { createApplication } }) => {
-      const data = store.readQuery({ query: GetAppsQuery });
-      (data as any).applications.push(createApplication);
-      store.writeQuery({ query: GetAppsQuery, data });
-    },
+  const deleteApps = useMutation<DeleteApps, DeleteAppsVariables>(DeleteAppsMutation, {
+    variables: { ids: items.map(_ => _.id) },
+    refetchQueries: ['GetApps'],
   });
+
   return (
-    <Dialog
-      hidden={!open}
-      onDismiss={requestClose}
-      dialogContentProps={{
-        type: DialogType.normal,
-        title: 'Create new app',
-        subText: '',
-      }}
-      modalProps={{
-        isBlocking: false,
-        // styles: { root: { minWidth: 720 } },
-      }}
-    >
-      <TextField
-        value={name}
-        onChange={e => e && setName((e.nativeEvent.target as any).value)}
-        styles={{ root: { marginBottom: 12 } }}
-        label="Name"
-        placeholder="Type app name..."
+    <>
+      <CommandBar
+        styles={{
+          secondarySet: {
+            alignItems: 'center',
+          },
+          root: { marginBottom: 12 },
+        }}
+        items={[
+          {
+            key: 'newItem',
+            name: 'Create new app',
+            cacheKey: 'myCacheKey', // changing this key will invalidate this items cache
+            iconProps: {
+              iconName: 'Add',
+            },
+            ariaLabel: 'New. Use left and right arrow keys to navigate',
+            onClick: () => setDialogOpen(true),
+          },
+          {
+            key: 'upload',
+            name: 'Import new app',
+            iconProps: {
+              iconName: 'Upload',
+            },
+            ['data-automation-id']: 'uploadButton',
+          },
+          {
+            key: 'delete',
+            name: `Delete app${items.length === 1 ? '' : 's'}`,
+            disabled: items.length === 0,
+            iconProps: {
+              iconName: 'Delete',
+            },
+            onClick: (e: any) => {
+              deleteApps();
+            },
+            ['data-automation-id']: 'uploadButton',
+          },
+        ]}
+        farItems={[
+          {
+            key: 'searchBox',
+            onRender: () => <SearchBox size={36} placeholder="Search" />,
+          },
+        ]}
+        ariaLabel={'Use left and right arrow keys to navigate between commands'}
       />
-      <TextField
-        value={description}
-        onChange={e => e && setDescription((e.nativeEvent.target as any).value)}
-        label="Description"
-        placeholder="Type app description"
-      />
-      <DialogFooter>
-        <PrimaryButton
-          onClick={async () => {
-            await creatNewApp();
-            requestClose();
-          }}
-          text="Create"
-        />
-        <DefaultButton onClick={requestClose} text="Cancel" />
-      </DialogFooter>
-    </Dialog>
+      <NewAppDialog open={dialogOpen} requestClose={() => setDialogOpen(false)} />
+    </>
   );
 };
 

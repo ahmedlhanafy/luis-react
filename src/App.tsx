@@ -1,38 +1,27 @@
-import React from 'react';
-import { ApolloProvider } from 'react-apollo-hooks';
-import ApolloClient, { InMemoryCache } from 'apollo-boost';
+import React, { Suspense } from 'react';
+import { BrowserRouter as Router, Route, Redirect, Switch } from 'react-router-dom';
 import MyApps from './pages/MyApps';
 import styled from 'styled-components';
 import Intents from './pages/Intents';
 import Entities from './pages/Entities';
-import { BrowserRouter as Router, Route, Redirect, Switch } from 'react-router-dom';
 import MicrosoftHeader from './components/MicrosoftHeader';
 import AppShell from './components/AppShell';
+import GraphqlProvider from './graphql/GraphqlProvider';
+import MockProvider from './graphql/MockProvider';
 
-const cache = new InMemoryCache({
-  dataIdFromObject: obj => obj.id || null,
-  cacheRedirects: {
-    Query: {
-      application: (_, args, { getCacheKey }) => getCacheKey({ __typename: 'Application', id: args.id }),
-    },
-  },
-});
+const App = () => {
+  const [mockSchemaEnabled, toggleMockedSchema] = React.useState(false);
 
-const client = new ApolloClient({
-  uri: 'http://localhost:8080/graphql',
-  headers: {
-    'Ocp-Apim-Subscription-Key': 'c0f3cc704f2e4d348d52cfc7ccfee85b',
-  },
-  cache,
-});
-
-const App = () => (
-  <ApolloProvider client={client}>
+  const children = (
     <Router>
       <AppContainer>
         <MicrosoftHeader username="Ahmed Elhanafy" />
         <Container>
-          <Route exact path="/" component={MyApps} />
+          <Route
+            exact
+            path="/"
+            render={() => <MyApps mockSchemaEnabled={mockSchemaEnabled} toggleMockSchema={() => toggleMockedSchema(state => !state)} />}
+          />
           <Route
             path="/application/:applicationId/version/:versionId"
             render={({ match }) => (
@@ -48,8 +37,10 @@ const App = () => (
         </Container>
       </AppContainer>
     </Router>
-  </ApolloProvider>
-);
+  );
+
+  return mockSchemaEnabled ? <MockProvider>{children}</MockProvider> : <GraphqlProvider>{children}</GraphqlProvider>;
+};
 
 const AppContainer = styled.div`
   display: flex;

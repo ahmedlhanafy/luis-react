@@ -4,7 +4,7 @@ module.exports = {
     target: 'typescript',
     service: {
       name: 'luis-graphql',
-      url: 'http://localhost:8080/graphql',
+      url: 'https://luis-graphql.herokuapp.com/graphql',
     },
   },
 };

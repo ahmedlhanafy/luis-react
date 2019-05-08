@@ -13,7 +13,7 @@ export interface GetApps_applications {
   name: string;
   culture: string;
   endpointHitsCount: number;
-  activeVersion: string;
+  version: string;
 }
 
 export interface GetApps {
