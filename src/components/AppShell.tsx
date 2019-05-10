@@ -2,13 +2,14 @@ import React from 'react';
 import styled from 'styled-components';
 import Header from './Header';
 import Nav from './Nav';
+import useAppData from '../hooks/useAppData';
 
 type Props = {
   children?: React.ReactNode;
-  applicationId: string;
 };
 
-const AppShell = ({ applicationId, children }: Props) => {
+const AppShell = ({ children }: Props) => {
+  const { applicationId } = useAppData();
   return (
     <>
       <Header applicationId={applicationId} />
@@ -31,4 +32,4 @@ const Content = styled.div`
   flex: 1;
 `;
 
-export default AppShell;
+export default React.memo(AppShell);

@@ -1,4 +1,4 @@
-import React, { Suspense } from 'react';
+import React from 'react';
 import { BrowserRouter as Router, Route, Redirect, Switch } from 'react-router-dom';
 import MyApps from './pages/MyApps';
 import styled from 'styled-components';
@@ -8,6 +8,8 @@ import MicrosoftHeader from './components/MicrosoftHeader';
 import AppShell from './components/AppShell';
 import GraphqlProvider from './graphql/GraphqlProvider';
 import MockProvider from './graphql/MockProvider';
+import AppDataContext from './contexts/AppDataContext';
+import UtterancePage from './pages/Utterance';
 
 const App = () => {
   const [mockSchemaEnabled, toggleMockedSchema] = React.useState(false);
@@ -25,13 +27,20 @@ const App = () => {
           <Route
             path="/application/:applicationId/version/:versionId"
             render={({ match }) => (
-              <AppShell applicationId={match.params.applicationId}>
-                <Switch>
-                  <Route exact path={`${match.url}/entities`} render={() => <Entities applicationId={match.params.applicationId} />} />
-                  <Route path={`${match.url}/intents`} render={() => <Intents applicationId={match.params.applicationId} />} />
-                  <Redirect strict from={match.url} to={`${match.url}/intents`} />
-                </Switch>
-              </AppShell>
+              <AppDataContext.Provider value={{ applicationId: match.params.applicationId, versionId: match.params.versionId }}>
+                <AppShell>
+                  <Switch>
+                    <Route exact path={`${match.url}/entities`} component={Entities} />
+                    <Route exact path={`${match.url}/intents`} component={Intents} />
+                    <Route
+                      exact
+                      path={`${match.url}/intents/:intentId`}
+                      render={({ match }) => <UtterancePage intentId={match.params.intentId} />}
+                    />
+                    <Redirect strict from={match.url} to={`${match.url}/intents`} />
+                  </Switch>
+                </AppShell>
+              </AppDataContext.Provider>
             )}
           />
         </Container>

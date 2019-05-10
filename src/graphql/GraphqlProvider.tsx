@@ -11,12 +11,16 @@ const cache = new InMemoryCache({
     Query: {
       application: (_, args, { getCacheKey }) => getCacheKey({ __typename: 'Application', id: args.id }),
     },
+    Application: {
+      intent: (_, args, { getCacheKey }) => getCacheKey({ __typename: 'Intent', id: args.id }),
+    },
   },
 });
 
 const client = new ApolloClient({
   link: createHttpLink({
-    uri: 'https://luis-graphql.herokuapp.com/graphql',
+    uri: 'http://localhost:8080/graphql',
+    // uri: 'https://luis-graphql.herokuapp.com/graphql',
     headers: {
       'Ocp-Apim-Subscription-Key': 'c0f3cc704f2e4d348d52cfc7ccfee85b',
     },
@@ -24,17 +28,6 @@ const client = new ApolloClient({
   cache,
 });
 
-const GraphqlProvider = ({ children }: { children: ReactNode }) => {
-  const [loaded, setLoaded] = React.useState(false);
-
-  React.useEffect(() => {
-    persistCache({
-      cache,
-      storage: window.localStorage as any,
-    }).then(() => setLoaded(true));
-  }, []);
-
-  return loaded ? <ApolloProvider client={client}>{children}</ApolloProvider> : null;
-};
+const GraphqlProvider = ({ children }: { children: ReactNode }) => <ApolloProvider client={client}>{children}</ApolloProvider>;
 
 export default GraphqlProvider;

@@ -1,6 +1,5 @@
 import React from 'react';
 import styled from 'styled-components';
-import { get } from 'lodash';
 import { CommandBar, SearchBox, Checkbox } from 'office-ui-fabric-react';
 import Table, { RowName } from '../components/Table';
 import { useQuery, useMutation } from 'react-apollo-hooks';
@@ -14,7 +13,7 @@ import NewAppDialog from '../components/NewAppDialog';
 type Props = { mockSchemaEnabled: boolean; toggleMockSchema: () => void };
 
 const MyApps = ({ mockSchemaEnabled, toggleMockSchema }: Props) => {
-  const { data } = useQuery<GetApps>(GetAppsQuery, { fetchPolicy: 'cache-and-network' });
+  const { data, loading } = useQuery<GetApps>(GetAppsQuery);
   const { items, selection } = useSelection();
 
   return (
@@ -32,8 +31,8 @@ const MyApps = ({ mockSchemaEnabled, toggleMockSchema }: Props) => {
       <TopBar items={items} />
       <Table
         selection={selection}
-        items={get(data, 'applications', [])}
-        isLoading={!data}
+        items={data.applications}
+        isLoading={loading}
         columns={[
           {
             key: 'column1',
@@ -49,8 +48,8 @@ const MyApps = ({ mockSchemaEnabled, toggleMockSchema }: Props) => {
             sortDescendingAriaLabel: 'Sorted Z to A',
             onRender: (item: GetApps_applications) => {
               return (
-                <RowName to={`/application/${item.id}/version/${item.version}`} onClick={e => e.stopPropagation()}>
-                  {item.name} <small>({item.version})</small>
+                <RowName to={`/application/${item.id}/version/${item.activeVersion}`} onClick={e => e.stopPropagation()}>
+                  {item.name} <small>({item.activeVersion})</small>
                 </RowName>
               );
             },

@@ -1,39 +1,25 @@
-import React, { useRef, useEffect } from 'react';
+import React, { useState } from 'react';
 import { get } from 'lodash';
-import { CommandBar, SearchBox, Selection, ISelection } from 'office-ui-fabric-react';
-import { useQuery, useMutation } from 'react-apollo-hooks';
+import { CommandBar, SearchBox } from 'office-ui-fabric-react';
+import { useQuery } from 'react-apollo-hooks';
 import Table, { RowName } from '../components/Table';
 import GetEntitiesQuery from '../graphql/queries/GetEntities';
+import useSelection from '../hooks/useSelection';
 import { GetEntities, GetEntities_application_entities } from '../graphql/queries/__generated__/GetEntities';
-import RenameEntityMutation from '../graphql/mutations/RenameEntity';
-import { RenameEntity, RenameEntityVariables } from '../graphql/mutations/__generated__/RenameEntity';
+import RenameEntityDialog from '../components/RenameEntityDialog';
+import useAppData from '../hooks/useAppData';
 
-const Entities = ({ applicationId }: { applicationId: string }) => {
+const Entities = () => {
+  const { applicationId } = useAppData();
   const { data, loading } = useQuery<GetEntities>(GetEntitiesQuery, { variables: { applicationId } });
-
-  const selection: { current: ISelection } = useRef<ISelection>(
-    new Selection({
-      onSelectionChanged: (...args: any[]) => console.log(selection.current.getSelection()),
-    }),
-  );
-  const name = 'Refrential entegrity';
-  const renameEntity = useMutation<RenameEntity, RenameEntityVariables>(RenameEntityMutation, {
-    variables: { applicationId, versionId: '0.1', id: '8d712b4b-c3c7-466a-9426-a21154757987', name },
-    optimisticResponse: {
-      renameEntity: {
-        id: '8d712b4b-c3c7-466a-9426-a21154757987',
-        name,
-        __typename: 'SimpleEntity',
-      },
-    },
-  });
+  const { selection, items } = useSelection();
 
   return (
     <section>
       <h1 className="ms-font-xxl ms-fontSize-xxl ms-fontWeight-regular">Entities</h1>
-      <TopBar renameEntity={renameEntity} />
+      <TopBar items={items} />
       <Table
-        selection={selection.current}
+        selection={selection}
         isLoading={loading}
         items={get(data, 'application.entities', [])}
         columns={[
@@ -77,60 +63,70 @@ const Entities = ({ applicationId }: { applicationId: string }) => {
   );
 };
 
-const TopBar = ({ renameEntity }: any) => (
-  <CommandBar
-    styles={{
-      secondarySet: {
-        alignItems: 'center',
-      },
-    }}
-    items={[
-      {
-        key: 'newItem',
-        name: 'Create new entity',
-        cacheKey: 'myCacheKey', // changing this key will invalidate this items cache
-        iconProps: {
-          iconName: 'Add',
-        },
-        ariaLabel: 'New. Use left and right arrow keys to navigate',
-      },
-      {
-        key: 'upload',
-        name: 'Add prebuilt entity',
-        iconProps: {
-          iconName: 'Add',
-        },
-        // href: 'https://dev.office.com/fabric',
-        ['data-automation-id']: 'uploadButton',
-      },
-      {
-        key: 'prebuilt_domain_entity',
-        name: 'Add prebuilt domain entity',
-        iconProps: {
-          iconName: 'Add',
-        },
-        // href: 'https://dev.office.com/fabric',
-        ['data-automation-id']: 'uploadButton',
-      },
-      {
-        key: 'rename_entity',
-        name: 'Rename Entity',
-        iconProps: {
-          iconName: 'Edit',
-        },
-        // href: 'https://dev.office.com/fabric',
-        ['data-automation-id']: 'uploadButton',
-        onClick: renameEntity,
-      },
-    ]}
-    farItems={[
-      {
-        key: 'searchBox',
-        onRender: () => <SearchBox size={36} placeholder="Search entities" />,
-      },
-    ]}
-    ariaLabel={'Use left and right arrow keys to navigate between commands'}
-  />
-);
+const TopBar = ({ items }: { items: GetEntities_application_entities[] }) => {
+  const [dialogOpen, setDialogOpen] = useState(false);
+  return (
+    <>
+      <CommandBar
+        styles={{
+          secondarySet: {
+            alignItems: 'center',
+          },
+          root: { marginBottom: 12 },
+        }}
+        items={[
+          {
+            key: 'newItem',
+            name: 'Create new entity',
+            cacheKey: 'myCacheKey', // changing this key will invalidate this items cache
+            iconProps: {
+              iconName: 'Add',
+            },
+            ariaLabel: 'New. Use left and right arrow keys to navigate',
+          },
+          {
+            key: 'upload',
+            name: 'Add prebuilt entity',
+            iconProps: {
+              iconName: 'Add',
+            },
+            // href: 'https://dev.office.com/fabric',
+            ['data-automation-id']: 'uploadButton',
+          },
+          {
+            key: 'prebuilt_domain_entity',
+            name: 'Add prebuilt domain entity',
+            iconProps: {
+              iconName: 'Add',
+            },
+            // href: 'https://dev.office.com/fabric',
+            ['data-automation-id']: 'uploadButton',
+          },
+          {
+            key: 'rename_entity',
+            name: 'Rename Entity',
+            iconProps: {
+              iconName: 'Edit',
+            },
+            // href: 'https://dev.office.com/fabric',
+            ['data-automation-id']: 'uploadButton',
+            onClick: () => setDialogOpen(true),
+            disabled: items.length !== 1,
+          },
+        ]}
+        farItems={[
+          {
+            key: 'searchBox',
+            onRender: () => <SearchBox size={36} placeholder="Search entities" />,
+          },
+        ]}
+        ariaLabel={'Use left and right arrow keys to navigate between commands'}
+      />
+      {items.length > 0 ? (
+        <RenameEntityDialog entityId={items[0].id} entityName={items[0].name} open={dialogOpen} requestClose={() => setDialogOpen(false)} />
+      ) : null}
+    </>
+  );
+};
 
 export default Entities;

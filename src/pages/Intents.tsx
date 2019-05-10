@@ -5,14 +5,19 @@ import Table, { RowName } from '../components/Table';
 import { useQuery } from 'react-apollo-hooks';
 import GetIntentsQuery from '../graphql/queries/GetIntents';
 import { GetIntents, GetIntents_application_intents } from '../graphql/queries/__generated__/GetIntents';
+import useAppData from '../hooks/useAppData';
+import useRouter from 'use-react-router';
 
-const Intents = ({ applicationId }: { applicationId: string }) => {
+const Intents = () => {
+  const { match } = useRouter();
+  const { applicationId } = useAppData();
   const { data, loading } = useQuery<GetIntents>(GetIntentsQuery, { variables: { applicationId } });
   const selection = useRef(
     new Selection({
       onSelectionChanged: console.log,
     }),
   );
+
   return (
     <section>
       <h1 className="ms-font-xxl ms-fontSize-xxl ms-fontWeight-regular">Intents</h1>
@@ -34,7 +39,11 @@ const Intents = ({ applicationId }: { applicationId: string }) => {
             isSortedDescending: false,
             sortAscendingAriaLabel: 'Sorted A to Z',
             sortDescendingAriaLabel: 'Sorted Z to A',
-            onRender: (item: GetIntents_application_intents) => <RowName to="#">{item.name}</RowName>,
+            onRender: (item: GetIntents_application_intents) => (
+              <RowName replace to={`${match.url}/${item.id}`}>
+                {item.name}
+              </RowName>
+            ),
           },
           {
             key: 'column2',

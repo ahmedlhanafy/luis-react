@@ -117,7 +117,8 @@ const Spacer = styled.span`
 const Container = styled.header`
   margin: 0;
   background: #393939;
-  height: 52px;
+  min-height: 52px;
+  max-height: 52px;
   align-items: center;
   display: flex;
 `;
