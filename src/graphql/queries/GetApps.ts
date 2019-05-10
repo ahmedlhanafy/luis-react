@@ -8,7 +8,7 @@ export default gql`
       name
       culture
       endpointHitsCount
-      version: activeVersion
+      activeVersion
     }
   }
 `;

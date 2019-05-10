@@ -6,7 +6,7 @@
     "@types/react-router": "^4.4.3",
     "apollo-cache-inmemory": "^1.5.1",
     "apollo-cache-persist": "^0.1.1",
-    "apollo-client": "^2.5.1",
+    "apollo-client": "^2.6.0-rc.1",
     "apollo-link-http": "^1.5.14",
     "apollo-link-schema": "^1.2.2",
     "global": "^4.3.2",
